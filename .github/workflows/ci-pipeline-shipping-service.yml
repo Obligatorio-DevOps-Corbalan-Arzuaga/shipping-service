@@ -6,6 +6,7 @@ on:
       - develop
       - staging
       - main
+      - mc-workflow-ci-shipping
   pull_request:
     branches:
       - develop
