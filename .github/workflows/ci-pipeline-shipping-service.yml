@@ -81,4 +81,4 @@ jobs:
           repository: Obligatorio-DevOps-Corbalan-Arzuaga/DevOps
           token: ${{ secrets.DISPATCH_TOKEN }} # No sirve el github token, ya que es para un repo remoto, necesita un PAT token
           event-type: terraform # Debe coincidir con el que espera el workfloww en DevOps
-          client-payload: '{"docker-image": "${{ secrets.ECR_URI_SHIPPING }}:${{ env.IMAGE_TAG }}", "environment": "${{ github.ref_name }}", "project": "${{ $REPO_NAME }}"}' 
+          client-payload: '{"docker-image": "${{ secrets.ECR_URI_SHIPPING }}:${{ env.IMAGE_TAG }}", "environment": "${{ github.ref_name }}", "project": "${{ env.REPO_NAME }}"}' 
