@@ -7,12 +7,6 @@ on:
       - staging
       - main
       - mc-workflow-ci-shipping
-  pull_request:
-    branches:
-      - develop
-      - staging
-      - main
-
 jobs:
   build-test-deploy:
     name: Build, Test, and Deploy
@@ -77,10 +71,14 @@ jobs:
         run: |
            docker push ${{ secrets.ECR_URI_SHIPPING }}:${{ env.IMAGE_TAG }}
 
+      - name: Get repository name
+        run: |
+         REPO_NAME=$(basename $GITHUB_REPOSITORY)
+      
       - name: Terraform deployy
         uses: peter-evans/repository-dispatch@v2
         with:
           repository: Obligatorio-DevOps-Corbalan-Arzuaga/DevOps
           token: ${{ secrets.DISPATCH_TOKEN }} # No sirve el github token, ya que es para un repo remoto, necesita un PAT token
           event-type: terraform # Debe coincidir con el que espera el workfloww en DevOps
-          client-payload: '{"docker-image": "${{ secrets.ECR_URI_SHIPPING }}:${{ env.IMAGE_TAG }}", "environment": "${{ github.ref_name }}", "project": "${{ github.repository }}"}' 
+          client-payload: '{"docker-image": "${{ secrets.ECR_URI_SHIPPING }}:${{ env.IMAGE_TAG }}", "environment": "${{ github.ref_name }}", "project": "${{ $REPO_NAME }}"}' 
