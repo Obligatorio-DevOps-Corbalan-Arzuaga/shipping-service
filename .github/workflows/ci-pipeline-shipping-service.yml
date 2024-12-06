@@ -72,8 +72,7 @@ jobs:
            docker push ${{ secrets.ECR_URI_SHIPPING }}:${{ env.IMAGE_TAG }}
 
       - name: Get repository name
-        run: |
-         REPO_NAME=$(basename $GITHUB_REPOSITORY)
+        run: echo "REPO_NAME=$(basename $GITHUB_REPOSITORY)" >> $GITHUB_ENV
       
       - name: Terraform deployy
         uses: peter-evans/repository-dispatch@v2
