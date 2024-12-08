@@ -63,7 +63,7 @@ jobs:
             echo "ECR_URI=${{ secrets.ECR_URI_SHIPPING_PROD }}" >> $GITHUB_ENV
           elif [[ "${{ github.ref_name }}" == "staging" ]]; then
             echo "ECR_URI=${{ secrets.ECR_URI_SHIPPING_STAGING }}" >> $GITHUB_ENV
-          elif [[ "${{ github.ref_name }}" == "dev" ]]; then
+          elif [[ "${{ github.ref_name }}" == "develop" ]]; then
             echo "ECR_URI=${{ secrets.ECR_URI_SHIPPING_DEV }}" >> $GITHUB_ENV
           else
             echo "Invalid branch. Exiting..."
