@@ -57,7 +57,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
 
-      - name: Set ECR URI based on environment
+      - name: Obtener URI_ECR de entorno
         run: |
           if [[ "${{ github.ref_name }}" == "main" ]]; then
             echo "ECR_URI=${{ secrets.ECR_URI_SHIPPING_PROD }}" >> $GITHUB_ENV
@@ -66,7 +66,7 @@ jobs:
           elif [[ "${{ github.ref_name }}" == "develop" ]]; then
             echo "ECR_URI=${{ secrets.ECR_URI_SHIPPING_DEV }}" >> $GITHUB_ENV
           else
-            echo "Invalid branch. Exiting..."
+            echo "Rama Invalida"
             exit 1
           fi
  
