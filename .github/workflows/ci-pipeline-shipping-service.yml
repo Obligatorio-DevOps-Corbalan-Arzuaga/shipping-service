@@ -6,7 +6,6 @@ on:
       - develop
       - staging
       - main
-      - mc-workflow-ci-shipping
 jobs:
   build-test-deploy:
     name: Build, Test, and Deploy
