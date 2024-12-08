@@ -1,0 +1,96 @@
+name: ci shipping service
+
+on:
+  push:
+    branches:
+      - develop
+      - staging
+      - main
+jobs:
+  build-test-deploy:
+    name: Build, Test, and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'temurin'
+
+      - name: Build and Test con Maven
+        run: mvn clean package
+
+      - name: Analisis SonarCloud
+        uses: SonarSource/sonarcloud-github-action@v2
+        env:
+          SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=obligatorio-devops-corbalan-arzuaga
+            -Dsonar.projectKey=Obligatorio-DevOps-Corbalan-Arzuaga_shipping-service
+            -Dsonar.sources=.
+            -Dsonar.java.binaries=target/classes
+            -Dsonar.exclusions=**/node_modules/**
+            -Dsonar.branch.name=${{ github.event_name == 'pull_request' && github.head_ref || github.ref_name }}
+            -Dsonar.verbose=true
+            
+      - name: Verificar resultados del análisis en SonarCloud
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
+          SONAR_HOST_URL: "https://sonarcloud.io"
+  
+      - name: Mostrar el estado del Quality Gate
+        run: |
+         echo "El estado del Quality Gate es: ${{ steps.sonarqube-quality-gate-check.outputs.quality-gate-status }}"
+
+      - name: Set up AWS CLI
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+
+      - name: Obtener URI_ECR de entorno
+        run: |
+          if [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "ECR_URI=${{ secrets.ECR_URI_SHIPPING_PROD }}" >> $GITHUB_ENV
+          elif [[ "${{ github.ref_name }}" == "staging" ]]; then
+            echo "ECR_URI=${{ secrets.ECR_URI_SHIPPING_STAGING }}" >> $GITHUB_ENV
+          elif [[ "${{ github.ref_name }}" == "develop" ]]; then
+            echo "ECR_URI=${{ secrets.ECR_URI_SHIPPING_DEV }}" >> $GITHUB_ENV
+          else
+            echo "Rama Invalida"
+            exit 1
+          fi
+ 
+      - name: Login to Amazon ECR
+        run: |
+           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${{ env.ECR_URI }}
+ 
+      - name: Build Docker image
+        run: |
+           IMAGE_TAG=${{ github.sha }}
+           docker build -t ${{ env.ECR_URI }}:$IMAGE_TAG .
+           echo "IMAGE_TAG=$IMAGE_TAG" >> $GITHUB_ENV
+ 
+      - name: Push Docker image to ECR
+        run: |
+           docker push ${{ env.ECR_URI }}:${{ env.IMAGE_TAG }}
+
+      - name: Get repository name
+        run: echo "REPO_NAME=$(basename $GITHUB_REPOSITORY)" >> $GITHUB_ENV
+      
+      - name: Terraform deployy
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          repository: Obligatorio-DevOps-Corbalan-Arzuaga/DevOps
+          token: ${{ secrets.DISPATCH_TOKEN }} # No sirve el github token, ya que es para un repo remoto, necesita un PAT token
+          event-type: terraform # Debe coincidir con el que espera el workfloww en DevOps
+          client-payload: '{"docker-image": "${{ env.ECR_URI }}:${{ env.IMAGE_TAG }}", "environment": "${{ github.ref_name }}", "project": "${{ env.REPO_NAME }}"}' 
