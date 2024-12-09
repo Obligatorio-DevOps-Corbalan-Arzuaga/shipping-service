@@ -83,14 +83,3 @@ jobs:
       - name: Push Docker image to ECR
         run: |
            docker push ${{ env.ECR_URI }}:${{ env.IMAGE_TAG }}
-
-      - name: Get repository name
-        run: echo "REPO_NAME=$(basename $GITHUB_REPOSITORY)" >> $GITHUB_ENV
-      
-      - name: Terraform deployy
-        uses: peter-evans/repository-dispatch@v2
-        with:
-          repository: Obligatorio-DevOps-Corbalan-Arzuaga/DevOps
-          token: ${{ secrets.DISPATCH_TOKEN }} # No sirve el github token, ya que es para un repo remoto, necesita un PAT token
-          event-type: terraform # Debe coincidir con el que espera el workfloww en DevOps
-          client-payload: '{"docker-image": "${{ env.ECR_URI }}:${{ env.IMAGE_TAG }}", "environment": "${{ github.ref_name }}", "project": "${{ env.REPO_NAME }}"}' 
